@@ -41,8 +41,8 @@ This project is an innovative **CV generator** leveraging **Large Language Model
 
 ### Step 1: Clone the repository
 ```bash
-git clone https://github.com/yourusername/cv-generator.git
-cd cv-generator
+git clone git@github.com:emartos/codecv.git
+cd codecv
 ```
 
 ### Step 2: Create and activate the virtual environment
