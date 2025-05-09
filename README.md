@@ -243,3 +243,9 @@ Copyright (C) 2025 Eduardo Martos Gómez <emartos@natiboo.es>
 
 - [OpenAI](https://openai.com/) and [Grok](https://grok.com/) for their LLM capabilities.
 - The open-source community for their incredible tools and resources.
+
+## 🔗 Explore with DeepWiki
+
+Use DeepWiki to create a **Retrieval-Augmented Generation (RAG)** for this repository. Discover key insights, detailed analysis, and organized content in one place.
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/emartos/codecv)
