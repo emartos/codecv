@@ -241,7 +241,7 @@ Copyright (C) 2025 Eduardo Martos Gómez <emartos@natiboo.es>
 
 ## 🎉 Acknowledgements
 
-- [OpenAI](https://openai.com/) and [Grok](https://grok.com/) for their LLM capabilities.
+- [OpenAI](https://openai.com/), [Grok](https://grok.com/), and [Google AI Studio](https://aistudio.google.com/) for their LLM capabilities, and [Ollama](https://ollama.com/) for efficient local LLM deployment.
 - The open-source community for their incredible tools and resources.
 
 ## 🔗 Explore with DeepWiki

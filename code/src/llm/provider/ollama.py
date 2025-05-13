@@ -1,42 +1,30 @@
-import logging
+import ollama
 import os
-import time
-
-import openai
 from src.llm.cache_manager import CacheManager
-
 from .model_interface import ModelInterface
+from requests.exceptions import RequestException
 
 
-class Grok(ModelInterface):
+class Ollama(ModelInterface):
     """
-    Provides functionality to generate text using the Grok API
-    and a caching system.
+    Class that integrates the Ollama library for Llama models.
     """
 
     def __init__(self):
         """
-        Initializes the OpenAI API client and sets up necessary configurations.
+        Initializes Ollama for Llama integration with cache management.
         """
-        openai.base_url = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
-        openai.api_key = os.getenv("XAI_API_KEY")
-
-        base_url = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
-        api_key = os.getenv("XAI_API_KEY")
-        self.client = openai.OpenAI(base_url=base_url, api_key=api_key)
-
         self.cache_manager = CacheManager()
-        self.model = os.getenv("XAI_TEXT_MODEL", "grok2")
-        self.role = os.getenv("XAI_TEXT_ROLE", "assistant")
+        self.model = os.getenv("LLAMA_TEXT_MODEL", "llama3.2")
+
+        base_url = os.getenv("LLAMA_BASE_URL", "http://localhost:11434")
+        ollama.base_url = base_url
 
     def get_name(self) -> str:
         """
-        Retrieves the identifier name of the OpenAI API handler.
-
-        Returns:
-            str: The string `"grok"`, which serves as the identifier for this handler.
+        Returns the name of the model ('ollama' in this case).
         """
-        return "grok"
+        return "ollama"
 
     def generate(
         self,
@@ -47,7 +35,7 @@ class Grok(ModelInterface):
         max_tokens: int = 1500,
     ):
         """
-        Generates text using the OpenAI API based on the provided prompt and settings.
+        Generates text using the Ollama client for Llama based on the provided prompt and settings.
 
         If caching is enabled and a cached response exists for the given prompt, it is
         returned directly. Otherwise, a request is made to OpenAI's API, and the
@@ -76,9 +64,7 @@ class Grok(ModelInterface):
 
         request_params = {
             "model": self.model,
-            "messages": [{"role": self.role, "content": f"{prompt}"}],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
+            "prompt": prompt,
         }
 
         max_retries = 15
@@ -87,12 +73,12 @@ class Grok(ModelInterface):
 
         while retry_count < max_retries:
             try:
-                response_object = self.client.chat.completions.create(**request_params)
-                response = response_object.choices[0].message.content
+                response = ollama.generate(**request_params)
+                response_text = response.get("response", "")
                 if cache:
-                    self.cache_manager.set(prompt, response)
-                return response
-            except openai.RateLimitError:
+                    self.cache_manager.set(prompt, response_text)
+                return response_text
+            except (ollama.ResponseError, RequestException) as e:
                 retry_count += 1
                 logging.warning(
                     f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {initial_delay} seconds."

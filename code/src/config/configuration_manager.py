@@ -18,7 +18,7 @@ class ConfigurationManager:
     """
 
     VALID_EXPORT_FORMATS = ["markdown", "pdf", "linkedin", "jsonresume", "europass"]
-    VALID_LLM_PROVIDERS = ["openai", "grok"]
+    VALID_LLM_PROVIDERS = ["openai", "grok", "ollama", "googlegenai"]
     VALID_GRAMMATICAL_PERSONS = ["first", "third"]
 
     _instance = None

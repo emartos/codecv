@@ -23,7 +23,6 @@ class Openai(ModelInterface):
         self.cache_manager = CacheManager()
         self.model = os.getenv("OPENAI_TEXT_MODEL", "gpt-4")
         self.role = os.getenv("OPENAI_TEXT_ROLE", "assistant")
-        self.priority = 1
 
     def get_name(self) -> str:
         """
