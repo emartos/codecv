@@ -37,7 +37,5 @@ class ModelProvider:
                 )
 
             return model_class()
-        except AttributeError:
-            raise AttributeError(
-                f"The class '{class_name}' could not be found in the module '{module_name}'."
-            )
+        except AttributeError as err:
+            raise AttributeError(str(err))

@@ -119,16 +119,16 @@ class TechnologyDetector:
             1. Use the input data to determine technologies and their weights (total weights must sum to exactly 100%).
             2. Produce a JSON object that contains a dictionary where the key is a technology name and the value is its weight in percentage.
             3. **Do not include any additional text, comments, arrays, or delimiters outside the JSON object.**
-            4. The JSON object must follow this structure exactly:
+            4. The JSON object must follow this structure:
             {
                 "TechnologyA": 50,
                 "TechnologyB": 30,
                 "TechnologyC": 10,
-                "TechnologyD": 10,
-                ...
+                "TechnologyD": 10
             }
             5. Do not include delimiters such as ```json.
-            6. If the output cannot be expressed in this format or is incomplete, return an empty JSON object (`{}`).
+            6. If you cannot ensure a complete and valid JSON object, ALWAYS return an empty JSON object (`{}`), and nothing else.
+            7. Before returning, validate the JSON format to ensure it is well-formed and closed. If not, return `{}` instead.
 
             Input:
             - Main technologies: [main_technologies]
@@ -148,10 +148,20 @@ class TechnologyDetector:
         try:
             return json.loads(cleaned_response.strip())
         except json.JSONDecodeError as err:
+            # We try to auto repair the corrupt JSON by adding a closing brace
+            if response.strip().endswith(","):
+                response = response.strip().rstrip(",")
+            if not response.strip().endswith("}"):
+                response += "}"
+            try:
+                return json.loads(response)
+            except json.JSONDecodeError:
+                return {}
+
             logging.error(
                 f"Error detecting the technologies: {str(err)}\nRaw response: {response}"
             )
-            return []
+            return {}
 
     def _get_unique_file_extensions(self, files: List[str]) -> Dict[str, int]:
         """

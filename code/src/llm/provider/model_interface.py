@@ -63,7 +63,7 @@ class ModelInterface(ABC):
             encoding = tiktoken.get_encoding("cl100k_base")
             # Log or print a warning for debugging purposes
             logging.warning(
-                f"⚠️ Model '{self.model}' is not recognized. Using default encoding 'cl100k_base'."
+                f"⚠️  Model '{self.model}' is not recognized. Using default encoding 'cl100k_base'."
             )
 
         # Estimate the token count for the prompt

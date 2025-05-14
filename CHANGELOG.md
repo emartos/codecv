@@ -28,3 +28,13 @@
   - Added `version.py` to define the project version (`1.0.0`).
 - In `code/src/`:
   - Added `__init__.py` files in relevant directories to structure the Python package.
+
+## [1.1.0] - 2025-05-14
+
+### Added
+- In `code/src/llm/provider/googlegenai.py`:
+  - Added support for Google Gemini API integration, enabling text generation with the `gemini-1.5-flash` model by default, configurable via `GOOGLE_TEXT_MODEL` environment variable.
+  - Implemented caching with `CacheManager` and retry logic for handling rate limit errors (`ResourceExhausted`).
+- In `code/src/llm/provider/ollama.py`:
+  - Added support for Ollama integration with Llama models, defaulting to `llama3.2`, configurable via `LLAMA_TEXT_MODEL` and `LLAMA_BASE_URL` environment variables.
+  - Included caching with `CacheManager` and retry logic for handling `ResponseError` and `RequestException`.
