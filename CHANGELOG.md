@@ -34,7 +34,16 @@
 ### Added
 - In `code/src/llm/provider/googlegenai.py`:
   - Added support for Google Gemini API integration, enabling text generation with the `gemini-1.5-flash` model by default, configurable via `GOOGLE_TEXT_MODEL` environment variable.
-  - Implemented caching with `CacheManager` and retry logic for handling rate limit errors (`ResourceExhausted`).
+  - Implemented caching with `CacheManager` and retry logic for handling rate limit errors (`ResourceExhausted`) and specific handling for `NotFound` (404) errors.
+  - Explicitly configured the Google AI Studio API key using `genai.configure()`.
 - In `code/src/llm/provider/ollama.py`:
-  - Added support for Ollama integration with Llama models, defaulting to `llama3.2`, configurable via `LLAMA_TEXT_MODEL` and `LLAMA_BASE_URL` environment variables.
+  - Added support for Ollama integration with Llama models, defaulting to `llama3.1`, configurable via `LLAMA_TEXT_MODEL` and `LLAMA_BASE_URL` environment variables.
   - Included caching with `CacheManager` and retry logic for handling `ResponseError` and `RequestException`.
+- In `code/src/llm/provider/openai.py` and `code/src/llm/provider/grok.py`:
+  - Updated default models to `gpt-4o` and `grok-2-latest` respectively for improved performance and stability.
+
+## [1.1.1] - 2026-03-19
+
+### Added
+- In `.env`:
+  - Updated default models for OpenAI, Google Gemini, Grok, and Ollama to ensure consistency and resolve 404 errors.

@@ -21,14 +21,16 @@ class Googlegenai(ModelInterface):
         Initializes the Google Gemini API client and sets up necessary configurations.
         """
         self.cache_manager = CacheManager()
-        self.model = os.getenv("GOOGLE_TEXT_MODEL", "gemini-1.5-flash")
+        self.model = os.getenv("GOOGLE_TEXT_MODEL", "gemini-3.1-flash-lite-preview")
         self.api_key = os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is not set")
+        
+        # Configure the Google AI Studio API key
+        genai.configure(api_key=self.api_key)
+
         self.client = genai.GenerativeModel(
             model_name=self.model,
-            # API key is automatically picked up from GOOGLE_API_KEY env var
-            # or can be passed explicitly via client_options if needed
         )
         self.role = os.getenv("GOOGLE_TEXT_ROLE", "user")  # Gemini uses 'user' for prompts
 
@@ -86,8 +88,8 @@ class Googlegenai(ModelInterface):
                 "application/json" if response_format == "json" else "text/plain"
             )
 
-        max_retries = 15
-        initial_delay = 5.0
+        max_retries = 5
+        initial_delay = 10.0
         retry_count = 0
 
         while retry_count < max_retries:
@@ -102,11 +104,13 @@ class Googlegenai(ModelInterface):
                 return response_text
             except exceptions.ResourceExhausted:
                 retry_count += 1
+                delay = initial_delay * (2 ** retry_count)  # Exponential backoff
                 logging.warning(
-                    f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {initial_delay} seconds."
+                    f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {delay} seconds."
                 )
-                time.sleep(initial_delay)
-                initial_delay *= 0.5
+                time.sleep(delay)
+            except exceptions.NotFound as e:
+                raise Exception(f"Model not found: {self.model}. Check if the model name is correct for the v1beta API: {str(e)}")
             except Exception as e:
                 raise Exception(f"An unexpected error occurred: {str(e)}")
 

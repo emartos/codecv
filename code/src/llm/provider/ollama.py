@@ -15,7 +15,7 @@ class Ollama(ModelInterface):
         Initializes Ollama for Llama integration with cache management.
         """
         self.cache_manager = CacheManager()
-        self.model = os.getenv("LLAMA_TEXT_MODEL", "llama3.2")
+        self.model = os.getenv("LLAMA_TEXT_MODEL", "llama3.1")
 
         base_url = os.getenv("LLAMA_BASE_URL", "http://localhost:11434")
         ollama.base_url = base_url

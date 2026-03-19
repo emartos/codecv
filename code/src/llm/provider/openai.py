@@ -21,7 +21,7 @@ class Openai(ModelInterface):
         openai.api_key = os.getenv("OPENAI_API_KEY")
         self.client = openai.OpenAI()
         self.cache_manager = CacheManager()
-        self.model = os.getenv("OPENAI_TEXT_MODEL", "gpt-4")
+        self.model = os.getenv("OPENAI_TEXT_MODEL", "gpt-5.4-nano")
         self.role = os.getenv("OPENAI_TEXT_ROLE", "assistant")
 
     def get_name(self) -> str:
@@ -73,7 +73,7 @@ class Openai(ModelInterface):
             "model": self.model,
             "messages": [{"role": self.role, "content": f"{prompt}"}],
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            "max_completion_tokens": max_tokens,
         }
         if response_format:
             request_params["response_format"] = response_format

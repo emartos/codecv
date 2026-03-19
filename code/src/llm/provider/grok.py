@@ -26,7 +26,7 @@ class Grok(ModelInterface):
         self.client = openai.OpenAI(base_url=base_url, api_key=api_key)
 
         self.cache_manager = CacheManager()
-        self.model = os.getenv("XAI_TEXT_MODEL", "grok2")
+        self.model = os.getenv("XAI_TEXT_MODEL", "grok-2-latest")
         self.role = os.getenv("XAI_TEXT_ROLE", "assistant")
 
     def get_name(self) -> str:
