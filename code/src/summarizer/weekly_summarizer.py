@@ -89,6 +89,10 @@ class WeeklySummarizer(SummarizerInterface):
         # Compute the total weight
         total_weight = sum(tech_weights.values())
 
+        # Return empty dict if no technologies
+        if total_weight == 0:
+            return {}
+
         # Compute initial percentages
         percentages = {
             tech: (weight / total_weight) * 100 for tech, weight in tech_weights.items()
@@ -99,7 +103,7 @@ class WeeklySummarizer(SummarizerInterface):
 
         # Adjust so that the summation is exactly 100
         current_sum = sum(rounded_percentages.values())
-        if current_sum != 100:
+        if current_sum != 100 and rounded_percentages:
             # Calculate the difference
             diff = 100 - current_sum
             # Find the technology with the greatest decimal to adjust
@@ -111,7 +115,8 @@ class WeeklySummarizer(SummarizerInterface):
                 decimal_diffs, key=lambda x: decimal_diffs[x], reverse=True
             )
             # Adjust the first technology in the list
-            rounded_percentages[sorted_techs[0]] += diff
+            if sorted_techs:
+                rounded_percentages[sorted_techs[0]] += diff
 
         result = dict(sorted(rounded_percentages.items()))
 

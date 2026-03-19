@@ -44,6 +44,20 @@
 
 ## [1.1.1] - 2026-03-19
 
-### Added
-- In `.env`:
-  - Updated default models for OpenAI, Google Gemini, Grok, and Ollama to ensure consistency and resolve 404 errors.
+### Fixed
+- In `code/src/llm/provider/googlegenai.py`:
+  - Updated default model from `gemini-1.5-flash` to `gemini-2.5-flash` to fix 404 errors with v1beta API.
+  - Improved retry strategy with proper exponential backoff (10s, 20s, 40s, 80s, 160s) for rate limit handling.
+  - Reduced max retries from 15 to 5 with better delay intervals.
+- In `code/src/llm/provider/openai.py`:
+  - Updated default model from `gpt-5.4-nano` to `gpt-4o-mini` (valid model name).
+  - Added retry logic for empty or None responses with exponential backoff.
+  - Improved error handling to distinguish between empty content and other errors.
+- In `code/src/summarizer/weekly_summarizer.py`:
+  - Fixed IndexError when consolidating technologies with empty technology list.
+  - Added validation to return empty dict when total_weight is 0.
+  - Added safety check before accessing `sorted_techs[0]` to prevent index out of range errors.
+- In `code/app.py`:
+  - Added validation for empty LLM responses before JSON parsing.
+  - Enhanced error logging with response previews for debugging JSON decode errors.
+  - Added debug logging for raw LLM responses.

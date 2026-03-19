@@ -86,6 +86,19 @@ class Openai(ModelInterface):
             try:
                 response_object = self.client.chat.completions.create(**request_params)
                 response = response_object.choices[0].message.content
+
+                if response is None or response.strip() == "":
+                    retry_count += 1
+                    logging.warning(
+                        f"OpenAI returned empty content. Retry {retry_count}/{max_retries} after {initial_delay} seconds."
+                    )
+                    if retry_count < max_retries:
+                        time.sleep(initial_delay)
+                        initial_delay *= 2
+                        continue
+                    else:
+                        raise Exception("OpenAI API returned empty content after all retries")
+
                 if cache:
                     self.cache_manager.set(prompt, response)
                 return response
@@ -97,6 +110,9 @@ class Openai(ModelInterface):
                 time.sleep(initial_delay)
                 initial_delay *= 0.5
             except Exception as e:
-                raise Exception(f"An unexpected error occurred: {str(e)}")
+                # Only raise if it's not an empty content error we're already handling
+                if "empty content" not in str(e):
+                    raise Exception(f"An unexpected error occurred: {str(e)}")
+                raise
 
-        raise Exception(f"Failed after {max_retries} retries due to rate limits.")
+        raise Exception(f"Failed after {max_retries} retries due to rate limits or empty responses.")

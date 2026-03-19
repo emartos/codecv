@@ -210,13 +210,19 @@ class CVGenerator:
         model_provider = ModelProvider()
         model = model_provider.get(llm_provider)
         llm_response = model.generate(prompt=prompt)
+
+        if not llm_response or llm_response.strip() == "":
+            raise Exception("❌ Error: the model returned an empty response")
+
+        logging.debug(f"Raw LLM response (first 200 chars): {llm_response[:200]}")
         cleaned_response = llm_response.strip("```json").strip("```").strip()
 
         try:
             return json.loads(cleaned_response)
         except json.JSONDecodeError as err:
+            logging.error(f"Failed to parse JSON. Cleaned response (first 500 chars): {cleaned_response[:500]}")
             raise Exception(
-                f"❌ Error: the model's response is not valid JSON: {err}\n\n{cleaned_response}"
+                f"❌ Error: the model's response is not valid JSON: {err}\n\nResponse preview: {cleaned_response[:200]}"
             )
 
     def _export(self, cv_data: Dict[str, Any]) -> None:
