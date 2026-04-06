@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import time
@@ -32,10 +33,13 @@ class CVGenerator:
         self.commit_extractor = CommitExtractor()
         self.hash = ""
 
-    def run(self) -> None:
+    def run(self, prefix: str = "") -> None:
         """
         Orchestrates the entire CV generation workflow.
         Collects inputs, extracts commits, summarizes data, processes LLM, and exports the CV.
+
+        Args:
+            prefix (str): Optional prefix for data and output files.
 
         Returns:
             None
@@ -50,13 +54,13 @@ class CVGenerator:
             project_context = self._get_project_context()
 
             # Stage 3: Summarization
-            monthly_summaries = self._summarize(commits_generator, project_context)
+            monthly_summaries = self._summarize(commits_generator, project_context, prefix)
 
             # Stage 4: LLM processing
             cv_data = self._llm_processing(monthly_summaries, project_context)
 
             # Stage 5: Data export
-            self._export(cv_data)
+            self._export(cv_data, prefix)
         except ValueError as err:
             logging.error(f"Error during CV generation process: {err}")
         except Exception as err:
@@ -135,6 +139,7 @@ class CVGenerator:
         self,
         commits_generator: Generator[List[Dict[str, Any]], None, None],
         project_context: List[str],
+        prefix: str = "",
     ) -> List[Dict]:
         """
         Summarizes the given commit data into daily, weekly, and monthly summaries.
@@ -143,6 +148,7 @@ class CVGenerator:
         Args:
             commits_generator (Generator): A generator yielding batches of commits.
             project_context (List[str]): Context of the project for better summarization.
+            prefix (str): Optional prefix for data files.
 
         Returns:
             List[Dict]: A list of summarized data grouped by month.
@@ -152,13 +158,15 @@ class CVGenerator:
             "project_context": project_context,
         }
 
+        filename_suffix = f"{prefix}-{self.hash}" if prefix else self.hash
+
         logging.info("Summarizing by day...")
         daily_summarizer = DailySummarizer()
         daily_summaries = FileCache.process_and_save(
             object_instance=daily_summarizer,
             process_function="summarize",
             process_args=(daily_data,),
-            file_path=f"data/daily-summaries-{self.hash}.json",
+            file_path=f"data/daily-summaries-{filename_suffix}.json",
         )
 
         logging.info("Summarizing by week...")
@@ -167,7 +175,7 @@ class CVGenerator:
             object_instance=weekly_summarizer,
             process_function="summarize",
             process_args=(daily_summaries,),
-            file_path=f"data/weekly-summaries-{self.hash}.json",
+            file_path=f"data/weekly-summaries-{filename_suffix}.json",
         )
 
         logging.info("Summarizing by month...")
@@ -176,7 +184,7 @@ class CVGenerator:
             object_instance=monthly_summarizer,
             process_function="summarize",
             process_args=(weekly_summaries,),
-            file_path=f"data/monthly-summaries-{self.hash}.json",
+            file_path=f"data/monthly-summaries-{filename_suffix}.json",
         )
 
         return monthly_summaries
@@ -225,12 +233,13 @@ class CVGenerator:
                 f"❌ Error: the model's response is not valid JSON: {err}\n\nResponse preview: {cleaned_response[:200]}"
             )
 
-    def _export(self, cv_data: Dict[str, Any]) -> None:
+    def _export(self, cv_data: Dict[str, Any], prefix: str = "") -> None:
         """
         Exports the generated CV to the desired format using the appropriate exporter.
 
         Args:
             cv_data (dict): The structured CV data to be exported.
+            prefix (str): Optional prefix for output files.
 
         Returns:
             None
@@ -240,11 +249,14 @@ class CVGenerator:
         export_format = self.configuration_manager.get_export_format()
         exporter_provider = ExporterProvider()
         exporter = exporter_provider.get(export_format)
+        
+        filename_suffix = f"{prefix}-{self.hash}" if prefix else self.hash
+        
         export_path = exporter.export(
             author_name=author_name,
             extract=cv_data["extract"],
             data=cv_data["cv"],
-            filename=f"resume-{self.hash}",
+            filename=f"resume-{filename_suffix}",
         )
         logging.info(f"✅ CV successfully generated at {export_path}")
 
@@ -253,5 +265,9 @@ if __name__ == "__main__":
     """
     Entry point of the script. Creates an instance of CVGenerator and runs the workflow.
     """
+    parser = argparse.ArgumentParser(description="CV Generation tool.")
+    parser.add_argument("--prefix", type=str, default="", help="Optional prefix for data and output files.")
+    args = parser.parse_args()
+
     cv_generator = CVGenerator()
-    cv_generator.run()
+    cv_generator.run(prefix=args.prefix)

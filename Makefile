@@ -117,10 +117,14 @@ app-version: check-venv
 	@echo "$(GREEN)Version of the program:$(NC)"
 	@$(PYTHON) -c "from code.version import __version__; print(__version__)"
 
-# Target: run - Runs the main application
+# Target: run - Runs the main application. Use prefix=... to set an optional prefix.
 run: check-venv
 	@echo "$(GREEN)Running the application...$(NC)"
-	@$(PYTHON) code/app.py
+	@if [ -n "$(prefix)" ]; then \
+		$(PYTHON) code/app.py --prefix "$(prefix)"; \
+	else \
+		$(PYTHON) code/app.py; \
+	fi
 
 # ====================
 # Cleaning and Maintenance

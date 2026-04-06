@@ -73,3 +73,19 @@
   - Added parallelization with `ThreadPoolExecutor` (3 workers) for processing monthly summaries concurrently.
 - General:
   - Ensured chronological order is preserved after parallel execution by sorting data keys before mapping tasks.
+
+## [1.1.4] - 2026-04-06
+
+### Added
+- In `code/app.py`:
+  - Added `argparse` to allow passing the `--prefix` parameter from the command line.
+- In `Makefile`:
+  - Updated the `run` target to support the `prefix` variable (e.g., `make run prefix=test`).
+
+## [1.1.3] - 2026-04-06
+
+### Added
+- In `code/app.py`:
+  - Modified `CVGenerator.run` to accept an optional `prefix` parameter.
+  - The `prefix` is applied to both intermediate data files (daily, weekly, monthly summaries) and final output files (resumes).
+  - This allows users to better organize or identify files from different execution runs.
