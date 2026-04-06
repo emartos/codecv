@@ -60,7 +60,7 @@ class DailySummarizer(SummarizerInterface):
         # Sort dates to maintain order
         sorted_summaries = sorted(summaries.items(), key=lambda x: x[0])
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             commits_by_day = list(executor.map(process_day, sorted_summaries))
 
         return commits_by_day

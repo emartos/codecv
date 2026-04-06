@@ -8,12 +8,15 @@ class ModelProvider:
     A factory-like class that manages and provides instances of registered models.
     """
 
-    def get(self, name: str) -> ModelInterface:
+    VALID_PROVIDERS = ["openai", "grok", "ollama", "googlegenai", "smart"]
+
+    def get(self, name: str, max_tokens: int = 4000) -> ModelInterface:
         """
         Retrieves a model by its name.
 
         Args:
             name (str): The name of the class to retrieve.
+            max_tokens (int): The maximum number of tokens allowed in the response.
 
         Returns:
             ModelInterface: An instance of the requested model.
@@ -36,6 +39,6 @@ class ModelProvider:
                     f"The class {class_name} is not a subclass of ModelInterface."
                 )
 
-            return model_class()
+            return model_class(max_tokens=max_tokens)
         except AttributeError as err:
             raise AttributeError(str(err))

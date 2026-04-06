@@ -17,8 +17,9 @@ class SummarizerInterface(ABC):
     def __init__(self):
         configuration_manager = ConfigurationManager()
         llm_provider = configuration_manager.get_llm_provider()
+        max_tokens = configuration_manager.get_max_tokens()
         model_provider = ModelProvider()
-        self.model = model_provider.get(llm_provider)
+        self.model = model_provider.get(llm_provider, max_tokens=max_tokens)
 
     @abstractmethod
     def summarize(self, data: List[Dict]) -> List[Dict]:

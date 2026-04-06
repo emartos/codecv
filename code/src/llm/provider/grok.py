@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from typing import Optional, Any
 
 import openai
 from src.llm.cache_manager import CacheManager
@@ -14,10 +15,11 @@ class Grok(ModelInterface):
     and a caching system.
     """
 
-    def __init__(self):
+    def __init__(self, max_tokens: int = 4000):
         """
         Initializes the OpenAI API client and sets up necessary configurations.
         """
+        super().__init__(max_tokens=max_tokens)
         openai.base_url = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
         openai.api_key = os.getenv("XAI_API_KEY")
 
@@ -41,10 +43,10 @@ class Grok(ModelInterface):
     def generate(
         self,
         prompt: str,
-        response_format=None,
+        response_format: Optional[Any] = None,
         cache: bool = True,
         temperature: float = 0.3,
-        max_tokens: int = 1500,
+        max_tokens: Optional[int] = None,
     ):
         """
         Generates text using the OpenAI API based on the provided prompt and settings.
@@ -58,7 +60,7 @@ class Grok(ModelInterface):
             response_format (Optional[Any]): Custom response formatting (defaults to None).
             cache (bool, optional): Whether to use caching for responses. Defaults to True.
             temperature (float, optional): Controls output randomness (0.0 to 1.0). Defaults to 0.3.
-            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to 1500.
+            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to self.max_tokens.
 
         Returns:
             str: The generated text response from the API.
@@ -73,6 +75,9 @@ class Grok(ModelInterface):
         cached_response = self.cache_manager.get(prompt)
         if cache and cached_response is not None:
             return cached_response
+
+        if max_tokens is None:
+            max_tokens = self.max_tokens
 
         request_params = {
             "model": self.model,
@@ -94,11 +99,16 @@ class Grok(ModelInterface):
                 return response
             except openai.RateLimitError:
                 retry_count += 1
-                logging.warning(
-                    f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {initial_delay} seconds."
-                )
-                time.sleep(initial_delay)
-                initial_delay *= 0.5
+                delay = initial_delay * (1.5 ** (retry_count - 1))
+                message = f"Rate limit exceeded. Retry {retry_count}/{max_retries}"
+                logging.warning(f"{message} after {delay:.1f} seconds.")
+                self._sleep_with_progress(delay, message)
+            except openai.BadRequestError as e:
+                # Specific handling for model not found or other client errors
+                error_msg = str(e).lower()
+                if "model not found" in error_msg:
+                    raise Exception(f"Model not found: {self.model}. Please check your XAI_TEXT_MODEL environment variable.")
+                raise Exception(f"Invalid request to Grok API: {str(e)}")
             except Exception as e:
                 raise Exception(f"An unexpected error occurred: {str(e)}")
 

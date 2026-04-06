@@ -16,10 +16,11 @@ class Googlegenai(ModelInterface):
     and a caching system.
     """
 
-    def __init__(self):
+    def __init__(self, max_tokens: int = 4000):
         """
         Initializes the Google Gemini API client and sets up necessary configurations.
         """
+        super().__init__(max_tokens=max_tokens)
         self.cache_manager = CacheManager()
         self.model = os.getenv("GOOGLE_TEXT_MODEL", "gemini-3.1-flash-lite-preview")
         self.api_key = os.getenv("GOOGLE_API_KEY")
@@ -65,7 +66,7 @@ class Googlegenai(ModelInterface):
         response_format: Optional[Any] = None,
         cache: bool = True,
         temperature: float = 0.3,
-        max_tokens: int = 1500,
+        max_tokens: Optional[int] = None,
     ) -> str:
         """
         Generates text using the Google Gemini API based on the provided prompt and settings.
@@ -79,7 +80,7 @@ class Googlegenai(ModelInterface):
             response_format (Optional[Any]): Custom response formatting (defaults to None).
             cache (bool, optional): Whether to use caching for responses. Defaults to True.
             temperature (float, optional): Controls output randomness (0.0 to 2.0). Defaults to 0.3.
-            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to 1500.
+            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to self.max_tokens.
 
         Returns:
             str: The generated text response from the API.
@@ -94,6 +95,9 @@ class Googlegenai(ModelInterface):
         cached_response = self.cache_manager.get(prompt)
         if cache and cached_response is not None:
             return cached_response
+
+        if max_tokens is None:
+            max_tokens = self.max_tokens
 
         generation_config = {
             "temperature": temperature,
@@ -110,21 +114,26 @@ class Googlegenai(ModelInterface):
 
         while retry_count < max_retries:
             try:
+                tokens = self.estimate_tokens(prompt)
+                logging.info(f"📊 Prompt size for '{self.get_name()}': ~{tokens} tokens.")
+            
                 response = self.client.generate_content(
                     contents=[{"role": self.role, "parts": [{"text": prompt}]}],
                     generation_config=generation_config
                 )
+                if not response or not hasattr(response, "text") or not response.text:
+                     raise exceptions.InternalServerError("Google Gemini returned empty or invalid response")
+
                 response_text = response.text
                 if cache:
                     self.cache_manager.set(prompt, response_text)
                 return response_text
             except exceptions.ResourceExhausted:
                 retry_count += 1
-                delay = initial_delay * (2 ** retry_count)  # Exponential backoff
-                logging.warning(
-                    f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {delay} seconds."
-                )
-                time.sleep(delay)
+                delay = initial_delay * (1.5 ** (retry_count - 1))  # Less aggressive exponential backoff
+                message = f"Rate limit exceeded. Retry {retry_count}/{max_retries}"
+                logging.warning(f"{message} after {delay:.1f} seconds.")
+                self._sleep_with_progress(delay, message)
             except exceptions.NotFound as e:
                 raise Exception(f"Model not found: {self.model}. Check if the model name is correct for the v1beta API: {str(e)}")
             except Exception as e:

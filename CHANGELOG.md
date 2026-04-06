@@ -62,42 +62,21 @@
   - Enhanced error logging with response previews for debugging JSON decode errors.
   - Added debug logging for raw LLM responses.
 
-## [1.1.2] - 2026-04-06
-
-### Optimized
-- In `code/src/summarizer/daily_summarizer.py`:
-  - Implemented parallel processing using `ThreadPoolExecutor` (10 workers) for daily summaries and technology detection, significantly reducing execution time.
-- In `code/src/summarizer/weekly_summarizer.py`:
-  - Added parallelization with `ThreadPoolExecutor` (5 workers) for processing weekly summaries concurrently.
-- In `code/src/summarizer/monthly_summarizer.py`:
-  - Added parallelization with `ThreadPoolExecutor` (3 workers) for processing monthly summaries concurrently.
-- General:
-  - Ensured chronological order is preserved after parallel execution by sorting data keys before mapping tasks.
-
-## [1.1.3] - 2026-04-06
+## [1.2.0] - 2026-04-06
 
 ### Added
-- In `code/app.py`:
-  - Modified `CVGenerator.run` to accept an optional `prefix` parameter.
-  - The `prefix` is applied to both intermediate data files (daily, weekly, monthly summaries) and final output files (resumes).
-  - This allows users to better organize or identify files from different execution runs.
+- Nuevo proveedor de LLM `Smart`: Permite la rotación automática y segura entre múltiples servicios (Google Gemini, OpenAI, Grok, Ollama) cuando uno agota su cuota o falla.
+- Parámetro `--prefix` (y variable `LLM_PROVIDER` como lista): Soporte para múltiples ejecuciones concurrentes y configuración flexible de proveedores en cascada.
+- Variable de entorno `LLM_MAX_TOKENS`: Control global del límite de tokens en las respuestas (por defecto 4000).
+- Soporte nativo de estimación de tokens para Google Gemini (`count_tokens`).
 
-## [1.1.4] - 2026-04-06
-
-### Added
-- In `code/app.py`:
-  - Added `argparse` to allow passing the `--prefix` parameter from the command line.
-- In `Makefile`:
-  - Updated the `run` target to support the `prefix` variable (e.g., `make run prefix=test`).
-
-## [1.1.5] - 2026-04-06
-
-### Added
-- In `code/src/llm/provider/googlegenai.py`:
-  - Implemented native `estimate_tokens` method using Google's API (`count_tokens`) for more accurate token estimation.
-  - Added a fallback mechanism to the base interface's estimation in case of API failure.
+### Improved
+- Optimización de Concurrencia: Reducción de hilos paralelos (max_workers=2) en los procesos de resumen para evitar bloqueos por Rate Limit.
+- Robustez en Reintentos: Implementación de un factor de backoff de 1.5x, jitter aleatorio y barras de progreso visuales con `tqdm`.
+- Diagnóstico Avanzado: Logging detallado del tamaño de los prompts, estimación de tokens y captura del objeto de respuesta completo de OpenAI para identificar fallos por filtros de seguridad o longitud.
+- Manejo de Errores: Detección de respuestas vacías, validación de modelos no encontrados (error 400) y eliminación de avisos ruidosos de `tiktoken`.
 
 ### Fixed
-- In `code/src/llm/provider/model_interface.py`:
-  - Removed noisy `WARNING` message when a model (like Google Gemini) is not recognized by `tiktoken`.
-  - The system now silently falls back to the `cl100k_base` encoding when necessary.
+- Corrección de errores críticos de importación (`NameError: Optional`) y unificación de firmas en los métodos `generate` de todos los proveedores.
+- Solución a fallos de índice en `WeeklySummarizer` al procesar tecnologías vacías.
+- Mejora en la persistencia y nomenclatura de archivos de caché en entornos paralelos.

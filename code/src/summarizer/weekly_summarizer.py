@@ -69,7 +69,7 @@ class WeeklySummarizer(SummarizerInterface):
                 "descriptions": weekly_summary,
             }
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(process_week, sorted_weeks))
 
         return results

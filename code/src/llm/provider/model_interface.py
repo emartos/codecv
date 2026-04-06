@@ -1,7 +1,11 @@
 import logging
+import time
+import random
 from abc import ABC, abstractmethod
+from typing import Optional, Any
 
 import tiktoken
+from tqdm import tqdm
 
 
 class ModelInterface(ABC):
@@ -16,14 +20,16 @@ class ModelInterface(ABC):
         model (Optional[Any]): The language model used for token estimation and text generation.
     """
 
-    def __init__(self, model=None):
+    def __init__(self, model=None, max_tokens=4000):
         """
         Initializes the `ModelInterface` with an optional model configuration.
 
         Args:
             model (Optional[Any]): The model configuration or identifier. Defaults to None.
+            max_tokens (int): The maximum number of tokens allowed in the response. Defaults to 4000.
         """
         self.model = model
+        self.max_tokens = max_tokens
 
     @abstractmethod
     def get_name(self) -> str:
@@ -68,7 +74,7 @@ class ModelInterface(ABC):
         response_format=None,
         cache: bool = True,
         temperature: float = 0.3,
-        max_tokens: int = 1500,
+        max_tokens: Optional[int] = None,
     ):
         """
         Abstract method that must be implemented by subclasses to generate
@@ -79,9 +85,36 @@ class ModelInterface(ABC):
             response_format (Optional[Any]): Custom formatting for the response. Defaults to None.
             cache (bool, optional): Defines whether caching should be used. Defaults to True.
             temperature (float, optional): Controls randomness in the generated text (range: 0.0 to 1.0). Defaults to 0.3.
-            max_tokens (int, optional): The maximum number of tokens allowed in the response. Defaults to 1500.
+            max_tokens (int, optional): The maximum number of tokens allowed in the response. Defaults to self.max_tokens.
 
         Returns:
             Any: The generated text or structured response, depending on the subclass implementation.
         """
         pass
+
+    def _sleep_with_progress(self, seconds: float, message: str) -> None:
+        """
+        Sleeps for a specified number of seconds while showing a progress bar.
+
+        Args:
+            seconds (float): Number of seconds to sleep.
+            message (str): Message to display with the progress bar.
+        """
+        # Use a small jitter to avoid synchronized retries
+        jitter = random.uniform(0.1, 1.0)
+        total_seconds = seconds + jitter
+        
+        # Round up to ensure at least some progress is shown if seconds > 0
+        total_steps = max(1, int(total_seconds))
+        
+        # tqdm for progress bar
+        with tqdm(total=total_steps, desc=message, bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}s", leave=False) as pbar:
+            for _ in range(total_steps):
+                time.sleep(1)
+                pbar.update(1)
+            
+            # Remaining fractional part
+            remaining = total_seconds - total_steps
+            if remaining > 0:
+                time.sleep(remaining)
+                # No need to update pbar for fractional part if we already reached total_steps

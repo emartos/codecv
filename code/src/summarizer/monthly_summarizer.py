@@ -74,7 +74,7 @@ class MonthlySummarizer(SummarizerInterface):
                 "technologies": technologies,
             }
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(process_month, sorted_months))
 
         return results

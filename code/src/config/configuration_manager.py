@@ -18,7 +18,7 @@ class ConfigurationManager:
     """
 
     VALID_EXPORT_FORMATS = ["markdown", "pdf", "linkedin", "jsonresume", "europass"]
-    VALID_LLM_PROVIDERS = ["openai", "grok", "ollama", "googlegenai"]
+    VALID_LLM_PROVIDERS = ["openai", "grok", "ollama", "googlegenai", "smart"]
     VALID_GRAMMATICAL_PERSONS = ["first", "third"]
 
     _instance = None
@@ -51,6 +51,7 @@ class ConfigurationManager:
             self.target_language = None
             self.grammatical_person = None
             self.ignore_commit_keywords = None
+            self.max_tokens = 4000
             self._initialized = True
             self.custom_datetime = CustomDatetime()
 
@@ -102,9 +103,16 @@ class ConfigurationManager:
             self.VALID_EXPORT_FORMATS, "EXPORT_FORMAT", "Export format", "markdown"
         )
 
-        self.llm_provider = self._input_with_options(
-            self.VALID_LLM_PROVIDERS, "LLM_PROVIDER", "LLM provider", "openai"
-        )
+        llm_provider_raw = (os.getenv("LLM_PROVIDER") or "").strip()
+        if "," in llm_provider_raw:
+            # If a comma-separated list is provided, we assume it's for 'smart' provider
+            # We only validate that 'smart' is in the list, or just set it to 'smart'
+            # The 'Smart' provider itself will handle the full list via LLM_PROVIDER
+            self.llm_provider = "smart"
+        else:
+            self.llm_provider = self._input_with_options(
+                self.VALID_LLM_PROVIDERS, "LLM_PROVIDER", "LLM provider", "openai"
+            )
 
         self.target_language = (os.getenv("TARGET_LANGUAGE") or "").strip() or prompt(
             "Target language: "
@@ -121,6 +129,8 @@ class ConfigurationManager:
             "IGNORE_COMMIT_KEYWORDS",
             "Keywords that make a commit irrelevant (i.e. typo, minor, etc.)",
         )
+
+        self.max_tokens = int(os.getenv("LLM_MAX_TOKENS", "4000"))
 
     def get_repo_path(self) -> str:
         """
@@ -266,6 +276,15 @@ class ConfigurationManager:
             List[str]: A list of keywords to ignore in commit messages.
         """
         return self.ignore_commit_keywords
+
+    def get_max_tokens(self) -> int:
+        """
+        Retrieves the configured maximum number of tokens for LLM generation.
+
+        Returns:
+            int: The configured max tokens.
+        """
+        return self.max_tokens
 
     def get_configuration(self) -> Dict[str, str]:
         """

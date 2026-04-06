@@ -1,5 +1,7 @@
 import ollama
 import os
+import logging
+from typing import Optional, Any
 from src.llm.cache_manager import CacheManager
 from .model_interface import ModelInterface
 from requests.exceptions import RequestException
@@ -10,10 +12,11 @@ class Ollama(ModelInterface):
     Class that integrates the Ollama library for Llama models.
     """
 
-    def __init__(self):
+    def __init__(self, max_tokens: int = 4000):
         """
         Initializes Ollama for Llama integration with cache management.
         """
+        super().__init__(max_tokens=max_tokens)
         self.cache_manager = CacheManager()
         self.model = os.getenv("LLAMA_TEXT_MODEL", "llama3.1")
 
@@ -29,10 +32,10 @@ class Ollama(ModelInterface):
     def generate(
         self,
         prompt: str,
-        response_format=None,
+        response_format: Optional[Any] = None,
         cache: bool = True,
         temperature: float = 0.3,
-        max_tokens: int = 1500,
+        max_tokens: Optional[int] = None,
     ):
         """
         Generates text using the Ollama client for Llama based on the provided prompt and settings.
@@ -46,7 +49,7 @@ class Ollama(ModelInterface):
             response_format (Optional[Any]): Custom response formatting (defaults to None).
             cache (bool, optional): Whether to use caching for responses. Defaults to True.
             temperature (float, optional): Controls output randomness (0.0 to 1.0). Defaults to 0.3.
-            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to 1500.
+            max_tokens (int, optional): The maximum number of tokens in the response. Defaults to self.max_tokens.
 
         Returns:
             str: The generated text response from the API.
@@ -62,12 +65,21 @@ class Ollama(ModelInterface):
         if cache and cached_response is not None:
             return cached_response
 
+        if max_tokens is None:
+            max_tokens = self.max_tokens
+
+        options = {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        }
+
         request_params = {
             "model": self.model,
             "prompt": prompt,
+            "options": options,
         }
 
-        max_retries = 15
+        max_retries = 10
         initial_delay = 5.0
         retry_count = 0
 
@@ -80,11 +92,10 @@ class Ollama(ModelInterface):
                 return response_text
             except (ollama.ResponseError, RequestException) as e:
                 retry_count += 1
-                logging.warning(
-                    f"Rate limit exceeded. Retry {retry_count}/{max_retries} after {initial_delay} seconds."
-                )
-                time.sleep(initial_delay)
-                initial_delay *= 0.5
+                message = f"Rate limit exceeded. Retry {retry_count}/{max_retries}"
+                logging.warning(f"{message} after {initial_delay:.1f} seconds.")
+                self._sleep_with_progress(initial_delay, message)
+                initial_delay *= 1.5
             except Exception as e:
                 raise Exception(f"An unexpected error occurred: {str(e)}")
 

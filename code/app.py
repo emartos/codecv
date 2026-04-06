@@ -215,8 +215,9 @@ class CVGenerator:
 
         logging.info("Calling the LLM...")
         llm_provider = self.configuration_manager.get_llm_provider()
+        max_tokens = self.configuration_manager.get_max_tokens()
         model_provider = ModelProvider()
-        model = model_provider.get(llm_provider)
+        model = model_provider.get(llm_provider, max_tokens=max_tokens)
         llm_response = model.generate(prompt=prompt)
 
         if not llm_response or llm_response.strip() == "":
