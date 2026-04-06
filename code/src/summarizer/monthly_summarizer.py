@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from typing import DefaultDict, Dict, List
 
@@ -52,8 +53,10 @@ class MonthlySummarizer(SummarizerInterface):
             summaries[month_key].append(item)
 
         # 2. Process each month to generate summaries.
-        results = []
-        for month_start, group in summaries.items():
+        sorted_months = sorted(summaries.items(), key=lambda x: x[0])
+
+        def process_month(month_data):
+            month_start, group = month_data
             technologies = self._consolidate_technologies(group)
             month_end = self._last_day_of_month(month_start)
 
@@ -62,16 +65,17 @@ class MonthlySummarizer(SummarizerInterface):
                 commits=group, prompt=self.PROMPT
             )
 
-            results.append(
-                {
-                    "month": month_start.strftime("%Y-%m"),
-                    "start_date": month_start.isoformat(),
-                    "end_date": month_end.isoformat(),
-                    "commit_count": total_commits,
-                    "descriptions": monthly_summary_text,
-                    "technologies": technologies,
-                }
-            )
+            return {
+                "month": month_start.strftime("%Y-%m"),
+                "start_date": month_start.isoformat(),
+                "end_date": month_end.isoformat(),
+                "commit_count": total_commits,
+                "descriptions": monthly_summary_text,
+                "technologies": technologies,
+            }
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            results = list(executor.map(process_month, sorted_months))
 
         return results
 

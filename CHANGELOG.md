@@ -61,3 +61,15 @@
   - Added validation for empty LLM responses before JSON parsing.
   - Enhanced error logging with response previews for debugging JSON decode errors.
   - Added debug logging for raw LLM responses.
+
+## [1.1.2] - 2026-04-06
+
+### Optimized
+- In `code/src/summarizer/daily_summarizer.py`:
+  - Implemented parallel processing using `ThreadPoolExecutor` (10 workers) for daily summaries and technology detection, significantly reducing execution time.
+- In `code/src/summarizer/weekly_summarizer.py`:
+  - Added parallelization with `ThreadPoolExecutor` (5 workers) for processing weekly summaries concurrently.
+- In `code/src/summarizer/monthly_summarizer.py`:
+  - Added parallelization with `ThreadPoolExecutor` (3 workers) for processing monthly summaries concurrently.
+- General:
+  - Ensured chronological order is preserved after parallel execution by sorting data keys before mapping tasks.

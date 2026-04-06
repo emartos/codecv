@@ -1,4 +1,5 @@
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Dict, List
 
@@ -43,20 +44,24 @@ class DailySummarizer(SummarizerInterface):
                 commit_date = datetime.fromisoformat(commit["date"]).date()
                 summaries[commit_date].append(commit)
 
-        commits_by_day = []
-        for commit_date, group in summaries.items():
+        def process_day(day_data):
+            commit_date, group = day_data
             files = [file for group_item in group for file in group_item["files"]]
             technologies = technology_detector.detect(files, project_context)
             daily_summary = self._unify_and_summarize(commits=group, prompt=self.PROMPT)
 
-            commits_by_day.append(
-                {
-                    "date": commit_date.isoformat(),
-                    "commit_count": len(group),
-                    "technologies": technologies,
-                    "descriptions": daily_summary,
-                }
-            )
+            return {
+                "date": commit_date.isoformat(),
+                "commit_count": len(group),
+                "technologies": technologies,
+                "descriptions": daily_summary,
+            }
+
+        # Sort dates to maintain order
+        sorted_summaries = sorted(summaries.items(), key=lambda x: x[0])
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            commits_by_day = list(executor.map(process_day, sorted_summaries))
 
         return commits_by_day
 

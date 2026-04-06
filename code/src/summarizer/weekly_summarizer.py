@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import DefaultDict, Dict, List
 
@@ -49,8 +50,10 @@ class WeeklySummarizer(SummarizerInterface):
             summaries[week_start].append(commit)
 
         # 2. Process each week to generate summaries
-        results = []
-        for week_start, group in summaries.items():
+        sorted_weeks = sorted(summaries.items(), key=lambda x: x[0])
+
+        def process_week(week_data):
+            week_start, group = week_data
             technologies = self._consolidate_technologies(group)
             week_end = week_start + timedelta(days=6)
             weekly_summary = self._unify_and_summarize(
@@ -58,15 +61,16 @@ class WeeklySummarizer(SummarizerInterface):
             )
             total_commits = sum(item["commit_count"] for item in group)
 
-            results.append(
-                {
-                    "start_date": week_start.isoformat(),
-                    "end_date": week_end.isoformat(),
-                    "commit_count": total_commits,
-                    "technologies": technologies,
-                    "descriptions": weekly_summary,
-                }
-            )
+            return {
+                "start_date": week_start.isoformat(),
+                "end_date": week_end.isoformat(),
+                "commit_count": total_commits,
+                "technologies": technologies,
+                "descriptions": weekly_summary,
+            }
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(process_week, sorted_weeks))
 
         return results
 
