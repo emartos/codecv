@@ -40,19 +40,15 @@ class ModelInterface(ABC):
         """
         Estimates the number of tokens required to process a given text prompt.
 
-        This is done using the Tiktoken library, which provides encoding utilities
-        for OpenAI-compatible language models. The method falls back to a default
-        encoding (`cl100k_base`) if the given model does not have a specific mapping.
+        The default implementation uses the Tiktoken library, which provides encoding
+        utilities for OpenAI-compatible language models. Subclasses can override this
+        method to provide model-specific estimation.
 
         Args:
             prompt (str): The text input to be tokenized and processed.
 
         Returns:
             int: The estimated count of tokens present in the given prompt.
-
-        Raises:
-            KeyError: If the specified model is not recognized in Tiktoken.
-            Warning: Logs a warning when the provided model does not have a specific encoding.
         """
         try:
             # Try to get the encoding for the model automatically
@@ -61,10 +57,6 @@ class ModelInterface(ABC):
             # Handle the case where the model is not mapped
             # Provide a default encoding here, e.g., use "cl100k_base" or other known encodings
             encoding = tiktoken.get_encoding("cl100k_base")
-            # Log or print a warning for debugging purposes
-            logging.warning(
-                f"⚠️  Model '{self.model}' is not recognized. Using default encoding 'cl100k_base'."
-            )
 
         # Estimate the token count for the prompt
         return len(encoding.encode(prompt))

@@ -43,6 +43,22 @@ class Googlegenai(ModelInterface):
         """
         return "googlegenai"
 
+    def estimate_tokens(self, prompt: str) -> int:
+        """
+        Estimates the number of tokens using Google's API.
+
+        Args:
+            prompt (str): The text input to be tokenized.
+
+        Returns:
+            int: The estimated count of tokens.
+        """
+        try:
+            return self.client.count_tokens(prompt).total_tokens
+        except Exception:
+            # Fallback to the default tiktoken estimation if API call fails
+            return super().estimate_tokens(prompt)
+
     def generate(
         self,
         prompt: str,

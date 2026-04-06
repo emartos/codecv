@@ -74,6 +74,14 @@
 - General:
   - Ensured chronological order is preserved after parallel execution by sorting data keys before mapping tasks.
 
+## [1.1.3] - 2026-04-06
+
+### Added
+- In `code/app.py`:
+  - Modified `CVGenerator.run` to accept an optional `prefix` parameter.
+  - The `prefix` is applied to both intermediate data files (daily, weekly, monthly summaries) and final output files (resumes).
+  - This allows users to better organize or identify files from different execution runs.
+
 ## [1.1.4] - 2026-04-06
 
 ### Added
@@ -82,10 +90,14 @@
 - In `Makefile`:
   - Updated the `run` target to support the `prefix` variable (e.g., `make run prefix=test`).
 
-## [1.1.3] - 2026-04-06
+## [1.1.5] - 2026-04-06
 
 ### Added
-- In `code/app.py`:
-  - Modified `CVGenerator.run` to accept an optional `prefix` parameter.
-  - The `prefix` is applied to both intermediate data files (daily, weekly, monthly summaries) and final output files (resumes).
-  - This allows users to better organize or identify files from different execution runs.
+- In `code/src/llm/provider/googlegenai.py`:
+  - Implemented native `estimate_tokens` method using Google's API (`count_tokens`) for more accurate token estimation.
+  - Added a fallback mechanism to the base interface's estimation in case of API failure.
+
+### Fixed
+- In `code/src/llm/provider/model_interface.py`:
+  - Removed noisy `WARNING` message when a model (like Google Gemini) is not recognized by `tiktoken`.
+  - The system now silently falls back to the `cl100k_base` encoding when necessary.
